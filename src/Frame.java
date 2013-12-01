@@ -1,3 +1,10 @@
+//package process;
+
+import matlabTool.*;
+import com.mathworks.toolbox.javabuilder.*;
+
+
+
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -9,6 +16,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -39,6 +47,12 @@ class Frame extends JFrame implements ActionListener
 	String picName = "";
 	String histogram = "";
 	String distance = "";
+	String databasePath = "";
+	
+	
+	/*connect the matlab*/
+	Tool tool = null;//
+	private Object[] result = null;//	
 	
 	public Frame() 
 	{
@@ -48,8 +62,13 @@ class Frame extends JFrame implements ActionListener
 		setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
 		setTitle("ImageGoogle");
 		setResizable(true);
+
 		
-		//ͼƬ
+		Toolkit toolkit = this.getToolkit();
+		//Image img=toolkit.createImage( this.getClass().getResource("/image/icon.png"));
+		//this.setIconImage(img);//set the demo image
+		
+		//图片
 		queryImage.setPreferredSize(new Dimension(160,160));
 		queryImage.setBorder(BorderFactory.createLineBorder(Color.gray));
 		for (int i = 0; i < Image.length; i++)
@@ -57,14 +76,18 @@ class Frame extends JFrame implements ActionListener
 			Image[i] = new JLabel();
 			Image[i].setPreferredSize(new Dimension(160,160));
 			Image[i].setBorder(BorderFactory.createLineBorder(Color.gray));
-			Image[i].setText("Image"+i);
+//			Image[i].setText("Image"+i);
 		}
 		
 		intro = new JLabel("welcome");
 		
 		//buttons
 		JButton uploadButton = new JButton("Upload");
+		JButton databaseButton = new JButton("Database");
+		JLabel query = new JLabel("Query Image: ");
+		JLabel databse = new JLabel("Database: ");
 		JButton search = new JButton("Search");
+		databaseButton.addActionListener(this);
 		uploadButton.addActionListener(this);
 		search.addActionListener(this);
 		
@@ -105,12 +128,14 @@ class Frame extends JFrame implements ActionListener
 		//Panels
 		basicPanel = new JPanel();
 		JPanel panel1 = new JPanel();
+		JPanel panel1_uper = new JPanel();
 		panel2 = new JPanel();
 		panel3 = new JPanel();
 		introduction = new JPanel();
 		bottom = new JPanel();
 		
 		basicPanel.setLayout(new BorderLayout());
+		panel1_uper.setLayout(new GridBagLayout());
 		setContentPane(basicPanel);
 		panel1.setLayout(new FlowLayout());
 		basicPanel.add(introduction, "Center");
@@ -118,18 +143,25 @@ class Frame extends JFrame implements ActionListener
 		//basicPanel.add(panel2, "Center");
 		basicPanel.add(bottom, "South");
 		panel1.add(queryImage);
-		panel1.add(uploadButton);
+		panel1.add(panel1_uper);
+		GridBagConstraints co = new GridBagConstraints();
+		addComponent(panel1_uper, query, co, 0, 0, 1 ,1);
+		addComponent(panel1_uper, uploadButton, co, 1, 0, 1 ,1);
+		addComponent(panel1_uper, databse, co, 0, 1, 1 ,1);
+		addComponent(panel1_uper, databaseButton, co, 1, 1, 1 ,1);
+		//panel1.add(databaseButton);
+		//panel1.add(uploadButton);
 		panel1.add(histogramBox);
 		panel1.add(distanceBox);
 		panel1.add(search);
 		introduction.setLayout(new BorderLayout());
-		introduction.setPreferredSize(new Dimension(532, 765));//�ؼ�����,����JPanel�Ĵ�С  
+		introduction.setPreferredSize(new Dimension(532, 765));//锟截硷拷锟斤拷锟�,锟斤拷锟斤拷JPanel锟侥达拷小  
 		introduction.add(intro, "East");
 		introduction.add(introPic, "West");
 		
 		
-		//ʹ��GridLayoutʱ�޷��̶�JLabel�Ĵ�С����С�����Ŵ��ڵĸı���ı�,
-		//����ֻ��ʹ��GridBagLayout
+		//使锟斤拷GridLayout时锟睫凤拷锟教讹拷JLabel锟侥达拷小锟斤拷锟斤拷小锟斤拷锟斤拷锟脚达拷锟节的改憋拷锟侥憋拷,
+		//锟斤拷锟斤拷只锟斤拷使锟斤拷GridBagLayout
 		panel2.setLayout(new GridBagLayout());
 		GridBagConstraints con = new GridBagConstraints();
 		panel2.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
@@ -181,10 +213,10 @@ class Frame extends JFrame implements ActionListener
 		pack();
 	}
 	
-	//xָ�ؼ�λ�ڵڼ���
-	//yָ�ؼ�λ�ڵڼ���
-	//wָ�ؼ���Ҫռ����
-	//hָ�ؼ���Ҫռ����
+	//x指锟截硷拷位锟节第硷拷锟斤拷
+	//y指锟截硷拷位锟节第硷拷锟斤拷
+	//w指锟截硷拷锟斤拷要占锟斤拷锟斤拷
+	//h指锟截硷拷锟斤拷要占锟斤拷锟斤拷
 	public void addComponent(JPanel panel, Component c, GridBagConstraints constraints, int x, int y, int w, int h)
 	{
 		constraints.insets.bottom = 4;
@@ -202,25 +234,38 @@ class Frame extends JFrame implements ActionListener
 	{
 		if (e.getActionCommand().equals("Upload"))
 	    {
-			JFileChooser fileChooser = new JFileChooser("c:\\");
+			JFileChooser fileChooser = new JFileChooser("G:/EclipseWworkspace/GoogleImage/src/image");
 			FileNameExtensionFilter filter =new FileNameExtensionFilter("Image Files", "jpg","jpeg","gif", "bmp", "png");  
 			fileChooser.setFileFilter(filter);
 			int result=fileChooser.showOpenDialog(this);
 			if(result==JFileChooser.APPROVE_OPTION)
 			{  
 				String picPath = fileChooser.getSelectedFile().getPath();  
-				//Pattern pattern = Pattern.compile("/");
-				//String[] strs = pattern.split(picPath);
-				//picName = strs[strs.length - 1];
+				Pattern pattern = Pattern.compile("/");
+				String[] strs = pattern.split(picPath);
+				picName = strs[strs.length - 1];
 				picName = picPath;
-				//System.out.println(picName);
+				System.out.println(picName);
 				ImageIcon icon = new ImageIcon(picPath);  
-				//���ȱ�����  
+				//锟斤拷锟饺憋拷锟斤拷锟斤拷  
 				Image temp = icon.getImage().getScaledInstance(160, 160, icon.getImage().SCALE_DEFAULT);  
 				icon = new ImageIcon(temp);
 				queryImage.setIcon(icon);  
 			}
 	    }
+		
+		if (e.getActionCommand().equals("Database"))
+		{
+			JFileChooser directoryChooser = new JFileChooser("c:/");
+			directoryChooser.setFileSelectionMode(1);//设定只能选择到文件夹   
+            int result = directoryChooser.showOpenDialog(this);//此句是打开文件选择器界面的触发语句  
+            if(result==JFileChooser.APPROVE_OPTION)
+			{  
+                File f = directoryChooser.getSelectedFile();//f为选择到的文件  
+                databasePath = f.getAbsolutePath();
+                //System.out.println(f.getAbsolutePath());
+            }
+		}
 	
 		if (e.getActionCommand().equals("Search"))
 		{
@@ -230,15 +275,44 @@ class Frame extends JFrame implements ActionListener
 			}
 			else
 			{
-				for (int i = 0; i < 24; i++)
-				{
-/*					ImageIcon icon = new ImageIcon("pic.png");  
-					//���ȱ�����  
-					Image temp = icon.getImage().getScaledInstance(160, 160, icon.getImage().SCALE_DEFAULT);  
-					icon = new ImageIcon(temp);
-					Image[i].setIcon(icon);*/
+				try {
+					tool=new Tool();
+					result=tool.Cbir(1,24,picName);
+
+					System.out.println("the result is"+result[0]);
+					String namesString=result[0].toString();
+					String []sortFileName=namesString.split(",");
+//					System.out.println("sorted filenames are"+sortFileName[1]);
 					
+					for (int i = 0; i < 24; i++)
+					{
+//						ImageIcon icon = new ImageIcon("pic.png"); 
+
+						String qString="/image/"+sortFileName[i];
+						ImageIcon icon = new ImageIcon(this.getClass().getResource(qString)); 					
+						//锟斤拷锟饺憋拷锟斤拷锟斤拷  
+						Image temp = icon.getImage().getScaledInstance(160, 160, icon.getImage().SCALE_DEFAULT);  
+						icon = new ImageIcon(temp);
+						Image[i].setIcon(icon);
+						
+					}					
+				} catch (MWException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
 				}
+				
+//				for (int i = 0; i < 24; i++)
+//				{
+////					ImageIcon icon = new ImageIcon("pic.png"); 
+//					String sortFileName="";
+//					String qString="/image/pic.png"+sortFileName;
+//					ImageIcon icon = new ImageIcon(this.getClass().getResource(qString)); 					
+//					//锟斤拷锟饺憋拷锟斤拷锟斤拷  
+//					Image temp = icon.getImage().getScaledInstance(160, 160, icon.getImage().SCALE_DEFAULT);  
+//					icon = new ImageIcon(temp);
+//					Image[i].setIcon(icon);
+//					
+//				}
 				
 				basicPanel.remove(introduction);
 				basicPanel.add(panel2, "Center");
